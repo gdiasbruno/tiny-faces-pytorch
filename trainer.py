@@ -83,6 +83,24 @@ def train(model, loss_fn, optimizer, dataloader, epoch, device):
                     loss_fn.class_average.average,
                     loss_fn.reg_average.average)
 
+def validation(model, loss_fn, optimizer, dataloader, device):
+    model = model.to(device)
+    model.eval()
+
+    for idx, (img, class_map, regression_map) in enumerate(dataloader):
+        x = img.float().to(device)
+
+        class_map_var = class_map.float().to(device)
+        regression_map_var = regression_map.float().to(device)
+
+        output = model(x)
+        loss = loss_fn(output,
+                       class_map_var, regression_map_var)
+
+        print_state(idx, -1, len(dataloader),
+                    loss_fn.class_average.average,
+                    loss_fn.reg_average.average)
+
 
 def get_detections(model, img, templates, rf, img_transforms,
                    prob_thresh=0.65, nms_thresh=0.3, scales=(-2, -1, 0, 1), device=None):
