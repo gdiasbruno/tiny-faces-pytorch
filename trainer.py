@@ -9,13 +9,16 @@ from models.utils import get_bboxes
 from utils.nms import nms
 
 
-def print_state(idx, epoch, size, loss_cls, loss_reg):
+def print_state(idx, epoch, size, loss_cls, loss_reg, logs=[]):
     if epoch >= 0:
         message = "Epoch: [{0}][{1}/{2}]\t".format(epoch, idx, size)
     else:
         message = "Val: [{0}/{1}]\t".format(idx, size)
 
     print(message +
+          '\tloss_cls: {loss_cls:.6f}' \
+          '\tloss_reg: {loss_reg:.6f}'.format(loss_cls=loss_cls, loss_reg=loss_reg))
+    logs.append(message +
           '\tloss_cls: {loss_cls:.6f}' \
           '\tloss_reg: {loss_reg:.6f}'.format(loss_cls=loss_cls, loss_reg=loss_reg))
 
@@ -57,7 +60,7 @@ def draw_bboxes(image, img_id, bboxes, scores, scales, processor):
     processor.render_and_save_bboxes(image, img_id, bboxes, scores, scales)
 
 
-def train(model, loss_fn, optimizer, dataloader, epoch, device):
+def train(model, loss_fn, optimizer, dataloader, epoch, device, logs=[]):
     model = model.to(device)
     model.train()
 
@@ -81,9 +84,9 @@ def train(model, loss_fn, optimizer, dataloader, epoch, device):
 
         print_state(idx, epoch, len(dataloader),
                     loss_fn.class_average.average,
-                    loss_fn.reg_average.average)
+                    loss_fn.reg_average.average, logs=logs)
 
-def validation(model, loss_fn, optimizer, dataloader, device):
+def validation(model, loss_fn, optimizer, dataloader, device, logs=[]):
     model = model.to(device)
     model.eval()
 
@@ -99,7 +102,7 @@ def validation(model, loss_fn, optimizer, dataloader, device):
 
         print_state(idx, -1, len(dataloader),
                     loss_fn.class_average.average,
-                    loss_fn.reg_average.average)
+                    loss_fn.reg_average.average, logs=logs)
 
 
 def get_detections(model, img, templates, rf, img_transforms,

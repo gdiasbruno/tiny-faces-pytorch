@@ -35,9 +35,11 @@ def arguments():
 
     return parser.parse_args()
 
+logs = []
 
 def main():
     args = arguments()
+    logs.append(str(args))
 
     num_templates = 25  # aka the number of clusters
 
@@ -93,15 +95,16 @@ def main():
     for name, param in model.named_parameters():
         if any(layer_name in name for layer_name in args.unfreeze_layers):
             param.requires_grad = True
-            print("Unfreezing " + str(name))    
+            print("Unfreezing " + str(name))
+            logs.append("Unfreezing " + str(name))
 
     # train and evalute for `epochs`
     for epoch in range(args.start_epoch, args.epochs):
-        trainer.train(model, loss_fn, optimizer, train_loader, epoch, device=device)
+        trainer.train(model, loss_fn, optimizer, train_loader, epoch, device=device, logs=logs)
         scheduler.step()
 
         if (epoch+1) % args.val_every == 0:
-            trainer.validation(model, loss_fn, optimizer, val_loader, device=device)
+            trainer.validation(model, loss_fn, optimizer, val_loader, device=device, logs=logs)
 
         if (epoch+1) % args.save_every == 0:
             trainer.save_checkpoint({
@@ -110,6 +113,10 @@ def main():
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict()
             }, filename="checkpoint_{0}.pth".format(epoch+1), save_path=weights_dir)
+    
+    with open("logs.txt", "w") as f:
+        for log in logs:
+            f.write(log + "\n")
 
 
 if __name__ == '__main__':
