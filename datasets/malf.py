@@ -105,7 +105,7 @@ class MALFdataset(dataset.Dataset):
 
         elif self.split == "test":
             data = open(path).readlines()
-            self.data = [{'img_path': x.strip()} for x in data]
+            self.data = [{'img_path': x.strip() + '.jpg'} for x in data]
 
     def get_all_bboxes(self):
         bboxes = np.empty((0, 4))

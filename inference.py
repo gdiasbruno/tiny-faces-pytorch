@@ -25,7 +25,7 @@ def arguments():
     parser.add_argument("--checkpoint",
                         help="The path to the model checkpoint", default="")
     parser.add_argument("--prob_thresh", type=float, default=0.03)
-    parser.add_argument("--nms_thresh", type=float, default=0.3)
+    parser.add_argument("--nms_thresh", type=float, default=0.1)
     parser.add_argument("--workers", default=8, type=int)
     parser.add_argument("--batch_size", default=1, type=int)
     parser.add_argument("--results_dir", default=None)
@@ -76,20 +76,51 @@ def write_results(dets, img_path, split, results_dir=None):
             width = np.round(x[2]-x[0]+1)
             height = np.round(x[3]-x[1]+1)
             score = x[4]
-            if score > 0:
+            d = "{0} {1} {2} {3} {4}\n".format(int(left), int(top),
+                                            int(width), int(height), score)
+            f.write(d)
+
+def write_results_one_file(all_dets, split, results_dir=None):
+    results_dir = results_dir or "{0}_results".format(split)
+
+    if not osp.exists(results_dir):
+        os.makedirs(results_dir)
+
+    filename = "predictions.txt"
+
+    with open(filename, 'w') as f:
+        for det_file in all_dets:
+            img_path = det_file["filename"]
+            dets = det_file["dets"]
+            f.write(img_path.split('/')[-1] + "\n")
+            f.write(str(dets.shape[0]) + "\n")
+
+            for x in dets:
+                left, top = np.round(x[0]), np.round(x[1])
+                width = np.round(x[2]-x[0]+1)
+                height = np.round(x[3]-x[1]+1)
+                score = x[4]
                 d = "{0} {1} {2} {3} {4}\n".format(int(left), int(top),
-                                               int(width), int(height), score)
+                                                int(width), int(height), score)
                 f.write(d)
 
 
 def run(model, val_loader, templates, prob_thresh, nms_thresh, device, split,
         results_dir=None, debug=False):
+    all_dets = []
     for idx, (img, filename) in tqdm(enumerate(val_loader), total=len(val_loader)):
         dets = trainer.get_detections(model, img, templates, val_loader.dataset.rf,
                                       val_loader.dataset.transforms, prob_thresh,
                                       nms_thresh, device=device)
 
-        write_results(dets, filename[0], split, results_dir)
+        all_dets.append({
+            "filename": filename[0],
+            "dets": dets
+        })
+    
+    write_results_one_file(all_dets, split, results_dir)
+    
+    
     return dets
 
 

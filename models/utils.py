@@ -11,10 +11,10 @@ def get_bboxes(score_cls, score_reg, prob_cls, templates, prob_thresh, rf, scale
     all_scale_template_ids = np.arange(4, 12)
 
     # templates to evaluate at a single scale aka small scale (Type B templates)
-    one_scale_template_ids = np.arange(18, 21) ## change code: 25 to 21
+    one_scale_template_ids = np.arange(0, 25)
 
-    ignored_template_ids = np.setdiff1d(np.arange(21), np.concatenate((all_scale_template_ids,
-                                                                       one_scale_template_ids)))  ## change code: 25 to 21
+    ignored_template_ids = np.setdiff1d(np.arange(25), np.concatenate((all_scale_template_ids,
+                                                                       one_scale_template_ids)))
 
     template_scales = templates[:, 4]
 
@@ -33,8 +33,7 @@ def get_bboxes(score_cls, score_reg, prob_cls, templates, prob_thresh, rf, scale
                                           one_scale_template_ids[invalid_one_scale_idx]))
 
     # zero out prediction from templates that are invalid on this scale
-    print("invalid_template_id", invalid_template_id)
-    prob_cls[:, :, invalid_template_id] = 0.0
+    prob_cls[:, :, :,invalid_template_id] = 0.0
 
     indices = np.where(prob_cls > prob_thresh)
     fb, fy, fx, fc = indices

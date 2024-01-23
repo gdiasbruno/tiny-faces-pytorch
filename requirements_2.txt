@@ -1,0 +1,10 @@
+numpy==1.22.0
+Pillow==9.3.0
+torch
+torchvision
+tqdm
+treelib
+joblib
+pyclust
+pyclustering
+scipy==1.11
