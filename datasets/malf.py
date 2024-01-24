@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import numpy as np
 import torch
 from PIL import Image
@@ -24,11 +23,9 @@ class MALFdataset(dataset.Dataset):
         self.data = []
         self.split = split
 
-        self.load(path)
+        
 
-        print("Dataset loaded")
-        print("{0} samples in the {1} dataset".format(len(self.data),
-                                                      self.split))
+        
         # self.data = data
 
         # canonical object templates obtained via clustering
@@ -55,6 +52,11 @@ class MALFdataset(dataset.Dataset):
                                        pos_thresh, neg_thresh,
                                        templates, rf=self.rf)
         self.debug = debug
+        self.load(path)
+        print("Dataset loaded")
+        print("{0} samples in the {1} dataset".format(len(self.data),
+                                                      self.split))
+        
 
     def load(self, path):
         """Load the dataset from the text file."""
@@ -65,7 +67,7 @@ class MALFdataset(dataset.Dataset):
             idx = 0
 
             while idx < len(lines):
-                img = lines[idx].strip() + '.jpg'
+                img_path = lines[idx].strip() + '.jpg'
                 idx += 1
                 n = int(lines[idx].strip())
                 idx += 1
@@ -96,9 +98,17 @@ class MALFdataset(dataset.Dataset):
                 bboxes[:, 2] = bboxes[:, 0] + bboxes[:, 2] - 1
                 bboxes[:, 3] = bboxes[:, 1] + bboxes[:, 3] - 1
 
+                image_path = Path("data/MALF")  / "all_pics" / img_path
+                image = Image.open(image_path).convert('RGB')
+                img, class_map, reg_map, bboxes_from_process_inputs = self.process_inputs(image,
+                                                                  bboxes[:, 0:4])
+
                 datum = {
-                    "img_path": img,
-                    "bboxes": bboxes[:, 0:4]
+                    "img": img,
+                    "img_path": img_path,
+                    "bboxes": bboxes_from_process_inputs,
+                    "class_map": class_map,
+                    "reg_map": reg_map
                 }
 
                 self.data.append(datum)
@@ -188,18 +198,16 @@ class MALFdataset(dataset.Dataset):
                     print(image_path)
                 print("Dataset index: \t", index)
                 print("image path:\t", image_path)
-
-            img, class_map, reg_map, bboxes = self.process_inputs(image,
-                                                                  bboxes)
-
+            # img, class_map, reg_map, bboxes = self.process_inputs(image,
+            #                                                       bboxes)
             # convert everything to tensors
             if self.transforms is not None:
                 # if img is a byte or uint8 array, it will convert from 0-255 to 0-1
                 # this converts from (HxWxC) to (CxHxW) as well
-                img = self.transforms(img)
+                img = self.transforms(datum["img"])
 
-            class_map = torch.from_numpy(class_map)
-            reg_map = torch.from_numpy(reg_map)
+            class_map = torch.from_numpy(datum['class_map'])
+            reg_map = torch.from_numpy(datum['reg_map'])
 
             return img, class_map, reg_map
 
