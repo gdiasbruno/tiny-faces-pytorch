@@ -1,7 +1,7 @@
 import argparse
 import os
 import os.path as osp
-
+import time
 import torch
 from torch import optim
 from torchvision import transforms
@@ -31,6 +31,7 @@ def arguments():
     parser.add_argument("--resume", default="")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--finetune_pretrained_weights", default="")
+    parser.add_argument("--save_outputs", default="")
     parser.add_argument('--unfreeze_layers', default=None, nargs='+', help='List of layer names to unfreeze.')
 
     return parser.parse_args()
@@ -58,7 +59,10 @@ def main():
     loss_fn = DetectionCriterion(num_templates)
 
     # directory where we'll store model weights
+
     weights_dir = "weights"
+    if args.save_outputs:
+        weights_dir = args.save_outputs
     if not osp.exists(weights_dir):
         os.mkdir(weights_dir)
 
@@ -100,9 +104,14 @@ def main():
 
     # train and evalute for `epochs`
     for epoch in range(args.start_epoch, args.epochs):
+        start_time = time.time()
         trainer.train(model, loss_fn, optimizer, train_loader, epoch, device=device, logs=logs)
         scheduler.step()
 
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        print(f"Elapsed time per epoch: {elapsed_time} seconds")
         if (epoch+1) % args.val_every == 0:
             trainer.validation(model, loss_fn, optimizer, val_loader, device=device, logs=logs)
 
@@ -114,7 +123,7 @@ def main():
                 'optimizer': optimizer.state_dict()
             }, filename="checkpoint_{0}.pth".format(epoch+1), save_path=weights_dir)
     
-    with open("logs.txt", "w") as f:
+    with open(args.save_outputs + "/logs.txt", "w") as f:
         for log in logs:
             f.write(log + "\n")
 
