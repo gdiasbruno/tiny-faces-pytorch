@@ -4,6 +4,8 @@ pip install gdown
 gdown https://drive.google.com/uc?id=1FAfy-2X2Ly_HiimafwTLtpiRVgOlX7yV
 # weights
 gdown https://drive.google.com/uc?id=101aViiaJWXQ-dWUwK6-FPSjOxsl_wCnm
+# weights usp account original
+gdown https://drive.google.com/uc?id=1gBKoSzC9heA05V1PF-k2sWODIR7j5iyR
 
 apt-get update && apt-get install unzip
 
